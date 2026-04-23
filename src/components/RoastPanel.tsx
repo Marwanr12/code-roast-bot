@@ -4,11 +4,11 @@ import confetti from "canvas-confetti";
 import { toast } from "sonner";
 import { FlameRating } from "./FlameRating";
 
-const LANGUAGES = ["JavaScript", "TypeScript", "Python", "C++", "Java", "PHP", "Go", "Rust", "Other"];
 const MAX_CHARS = 10000;
 
 type RoastIssue = { title: string; burn: string; emoji: string };
 type RoastResult = {
+  detectedLanguage: string;
   opener: string;
   issues: RoastIssue[];
   verdict: string;
@@ -18,7 +18,7 @@ type RoastResult = {
 
 export function RoastPanel() {
   const [code, setCode] = useState("");
-  const [language, setLanguage] = useState("JavaScript");
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RoastResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +49,7 @@ export function RoastPanel() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ code: code.slice(0, MAX_CHARS), language }),
+        body: JSON.stringify({ code: code.slice(0, MAX_CHARS) }),
       });
 
       if (resp.status === 429) {
