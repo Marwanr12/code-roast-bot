@@ -31,6 +31,10 @@ Deno.serve(async (req: Request) => {
   try {
     const { code } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY missing from environment");
       return new Response(
@@ -42,6 +46,25 @@ Deno.serve(async (req: Request) => {
     if (!code || typeof code !== "string") {
       return new Response(JSON.stringify({ error: "Missing code" }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Require an authenticated user
+    const authHeader = req.headers.get("Authorization") ?? "";
+    let userId: string | null = null;
+    if (SUPABASE_URL && SUPABASE_ANON_KEY && authHeader.startsWith("Bearer ")) {
+      const userResp = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: authHeader },
+      });
+      if (userResp.ok) {
+        const userJson = await userResp.json();
+        userId = userJson?.id ?? null;
+      }
+    }
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "You must be signed in to get roasted." }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
