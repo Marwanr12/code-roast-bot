@@ -166,6 +166,8 @@ export function RoastPanel() {
               <span className="inline-flex items-center gap-2">
                 <span className="inline-block animate-spin-slow">🔥</span> Roasting...
               </span>
+            ) : !user ? (
+              <span>🔒 Sign in to Roast</span>
             ) : (
               <span>Roast It 🔥</span>
             )}
