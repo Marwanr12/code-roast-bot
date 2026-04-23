@@ -1,18 +1,16 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { Header } from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/history")({
   component: HistoryPage,
   head: () => ({
     meta: [
-      { title: "Your Roast History 🔥" },
-      { name: "description", content: "Every code submission and roast you've ever received." },
+      { title: "Roast History 🔥" },
+      { name: "description", content: "Private roast archive." },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
 });
@@ -31,45 +29,52 @@ type RoastRow = {
 };
 
 function HistoryPage() {
-  const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const [password, setPassword] = useState("");
+  const [authed, setAuthed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [rows, setRows] = useState<RoastRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate({ to: "/auth" });
+  const fetchRoasts = async (pw: string) => {
+    const resp = await fetch("/api/admin/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw }),
+    });
+    if (resp.status === 401) {
+      throw new Error("Wrong password.");
     }
-  }, [authLoading, user, navigate]);
+    if (!resp.ok) {
+      throw new Error("Couldn't load history.");
+    }
+    const data = (await resp.json()) as { roasts: RoastRow[] };
+    return data.roasts;
+  };
 
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("roasts")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (cancelled) return;
-      if (error) {
-        toast.error("Couldn't load your roasts.");
-      } else {
-        setRows((data ?? []) as unknown as RoastRow[]);
-      }
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!password) return;
+    setSubmitting(true);
+    try {
+      const data = await fetchRoasts(password);
+      setRows(data);
+      setAuthed(true);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Login failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     const prev = rows;
     setRows((r) => r.filter((x) => x.id !== id));
-    const { error } = await supabase.from("roasts").delete().eq("id", id);
-    if (error) {
+    const resp = await fetch("/api/admin/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password, action: "delete", id }),
+    });
+    if (!resp.ok) {
       setRows(prev);
       toast.error("Couldn't delete that roast.");
     } else {
@@ -77,46 +82,88 @@ function HistoryPage() {
     }
   };
 
-  if (authLoading || !user) {
+  if (!authed) {
     return (
-      <div className="min-h-screen bg-background grid-bg">
-        <Header />
-        <div className="px-4 py-20 text-center text-muted-foreground font-mono">Loading...</div>
+      <div className="min-h-screen bg-background grid-bg flex items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 md:p-8"
+        >
+          <div className="text-center mb-6">
+            <div className="text-5xl mb-2">🔒</div>
+            <h1 className="font-display text-2xl font-bold">Private Archive</h1>
+            <p className="text-sm text-muted-foreground font-mono mt-1">
+              Admin password required.
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoFocus
+              autoComplete="current-password"
+              placeholder="Enter password"
+              className="bg-input rounded-lg px-3 py-3 border border-border focus:outline-none focus:ring-2 focus:ring-[#ff2d78] font-mono text-sm min-h-[44px]"
+            />
+            <button
+              type="submit"
+              disabled={submitting || !password}
+              className="bg-gradient-neon text-white font-display font-bold rounded-xl py-3 min-h-[48px] shadow-neon-mixed disabled:opacity-50 hover:shadow-neon-pink transition-shadow"
+            >
+              {submitting ? "Checking..." : "Unlock 🔓"}
+            </button>
+          </form>
+
+          <div className="mt-5 text-center">
+            <Link to="/" className="text-xs font-mono text-muted-foreground hover:text-foreground">
+              ← Back home
+            </Link>
+          </div>
+        </motion.div>
+        <Toaster theme="dark" position="top-center" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <Header />
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-border">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <Link to="/" className="font-display font-bold text-lg flex items-center gap-2">
+            <span className="text-xl">🔥</span>
+            <span>RoastMyCode</span>
+          </Link>
+          <button
+            onClick={() => {
+              setAuthed(false);
+              setPassword("");
+              setRows([]);
+            }}
+            className="text-sm font-semibold rounded-lg px-3 py-2 border border-border hover:border-[#ff2d78] hover:text-[#ff2d78] transition-colors min-h-[40px]"
+          >
+            Lock 🔒
+          </button>
+        </div>
+      </header>
+
       <section className="px-4 py-10 md:py-14 max-w-5xl mx-auto">
         <div className="mb-8">
           <h1 className="font-display text-3xl md:text-5xl font-bold tracking-tight">
-            Your <span className="text-gradient-neon">Roast History</span>
+            Roast <span className="text-gradient-neon">Archive</span>
           </h1>
           <p className="mt-2 text-sm md:text-base text-muted-foreground font-mono">
-            Every piece of code you've submitted, with its roast. Only you can see this. 🔒
+            {rows.length} {rows.length === 1 ? "roast" : "roasts"} stored. Private — admin only. 🔒
           </p>
         </div>
 
-        {loading ? (
-          <div className="text-center py-20 text-muted-foreground font-mono">
-            <span className="text-4xl block mb-3 animate-flame">🔥</span>
-            Loading the embarrassment...
-          </div>
-        ) : rows.length === 0 ? (
+        {rows.length === 0 ? (
           <div className="text-center py-20 rounded-2xl border border-border bg-card">
             <div className="text-5xl mb-3">🎙️</div>
             <p className="font-display text-lg font-bold">No roasts yet.</p>
-            <p className="text-sm text-muted-foreground font-mono mt-1">
-              Go submit some code and get destroyed.
-            </p>
-            <Link
-              to="/"
-              className="inline-block mt-5 bg-gradient-neon text-white font-display font-bold rounded-xl px-5 py-3 shadow-neon-mixed hover:shadow-neon-pink transition-shadow"
-            >
-              Roast me 🔥
-            </Link>
           </div>
         ) : (
           <ul className="flex flex-col gap-4">
@@ -170,10 +217,7 @@ function HistoryPage() {
                         </p>
                         <ol className="flex flex-col gap-2">
                           {row.issues.map((it, idx) => (
-                            <li
-                              key={idx}
-                              className="rounded-lg border border-border bg-black/40 p-3"
-                            >
+                            <li key={idx} className="rounded-lg border border-border bg-black/40 p-3">
                               <div className="flex items-start gap-2">
                                 <span className="text-xl shrink-0">{it.emoji}</span>
                                 <div>
