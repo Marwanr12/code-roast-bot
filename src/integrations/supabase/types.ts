@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      roasts: {
+        Row: {
+          backhanded_compliment: string
+          code: string
+          created_at: string
+          flames: number
+          id: string
+          issues: Json
+          language: string
+          opener: string
+          verdict: string
+        }
+        Insert: {
+          backhanded_compliment: string
+          code: string
+          created_at?: string
+          flames: number
+          id?: string
+          issues?: Json
+          language: string
+          opener: string
+          verdict: string
+        }
+        Update: {
+          backhanded_compliment?: string
+          code?: string
+          created_at?: string
+          flames?: number
+          id?: string
+          issues?: Json
+          language?: string
+          opener?: string
+          verdict?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
