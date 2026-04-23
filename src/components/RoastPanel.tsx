@@ -7,10 +7,13 @@ import { FlameRating } from "./FlameRating";
 const LANGUAGES = ["JavaScript", "TypeScript", "Python", "C++", "Java", "PHP", "Go", "Rust", "Other"];
 const MAX_CHARS = 10000;
 
+type RoastIssue = { title: string; burn: string; emoji: string };
 type RoastResult = {
-  roast: string;
-  flames: number;
+  opener: string;
+  issues: RoastIssue[];
+  verdict: string;
   backhandedCompliment: string;
+  flames: number;
 };
 
 export function RoastPanel() {
@@ -74,14 +77,17 @@ export function RoastPanel() {
 
   const handleCopy = async () => {
     if (!result) return;
-    const text = `${result.roast}\n\n${"🔥".repeat(result.flames)} (${result.flames}/5)\n\n"${result.backhandedCompliment}"\n\n— Roasted by RoastMyCode`;
+    const issuesText = result.issues
+      .map((it, i) => `${i + 1}. ${it.emoji} ${it.title}\n   ${it.burn}`)
+      .join("\n\n");
+    const text = `🎤 ${result.opener}\n\n${issuesText}\n\n${"🔥".repeat(result.flames)} (${result.flames}/5)\n\n📌 ${result.verdict}\n\n💬 "${result.backhandedCompliment}"\n\n— Roasted by RoastMyCode`;
     await navigator.clipboard.writeText(text);
     toast.success("Roast copied. Now go cry in monospace.");
   };
 
   const handleTweet = () => {
     if (!result) return;
-    const text = `My code just got roasted: "${result.roast.slice(0, 180)}..." ${"🔥".repeat(result.flames)}\n\nGet roasted too:`;
+    const text = `My code just got roasted: "${result.opener.slice(0, 180)}" ${"🔥".repeat(result.flames)}\n\nGet roasted too:`;
     const url = window.location.href;
     window.open(
       `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
@@ -206,17 +212,52 @@ export function RoastPanel() {
                   </motion.div>
                 )}
 
-                <p className="text-base md:text-lg leading-relaxed text-foreground/95 whitespace-pre-wrap">
-                  {result.roast}
+                {/* Opener */}
+                <p className="text-lg md:text-xl leading-snug font-display font-bold text-foreground">
+                  🎤 {result.opener}
                 </p>
 
+                {/* Severity */}
                 <div className="flex items-center justify-between flex-wrap gap-3 py-3 border-y border-border">
-                  <span className="text-sm text-muted-foreground font-mono">Severity</span>
+                  <span className="text-sm text-muted-foreground font-mono uppercase tracking-wider">Severity</span>
                   <FlameRating flames={result.flames} />
                 </div>
 
-                <blockquote className="border-l-4 border-[#7b2fff] pl-4 italic text-foreground/80">
-                  "{result.backhandedCompliment}"
+                {/* Issues list */}
+                <ol className="flex flex-col gap-3">
+                  {result.issues.map((issue, i) => (
+                    <motion.li
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.15 + i * 0.08 }}
+                      className="rounded-lg border border-border bg-black/40 p-3 md:p-4 hover:border-[#ff2d78]/40 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl shrink-0 leading-none mt-0.5">{issue.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-display font-bold text-sm md:text-base text-[#ff2d78] mb-1">
+                            <span className="text-muted-foreground font-mono mr-2">#{i + 1}</span>
+                            {issue.title}
+                          </h3>
+                          <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
+                            {issue.burn}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.li>
+                  ))}
+                </ol>
+
+                {/* Verdict */}
+                <div className="rounded-lg bg-gradient-to-r from-[#ff2d78]/10 to-[#7b2fff]/10 border border-[#7b2fff]/30 p-3 md:p-4">
+                  <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Final Verdict</p>
+                  <p className="text-sm md:text-base text-foreground/95">📌 {result.verdict}</p>
+                </div>
+
+                {/* Backhanded compliment */}
+                <blockquote className="border-l-4 border-[#7b2fff] pl-4 italic text-foreground/80 text-sm md:text-base">
+                  💬 "{result.backhandedCompliment}"
                 </blockquote>
 
                 <div className="flex flex-wrap gap-3 mt-auto pt-2">
