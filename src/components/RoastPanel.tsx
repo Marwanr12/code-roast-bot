@@ -156,7 +156,19 @@ export function RoastPanel() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="rounded-2xl border border-border bg-card p-5 md:p-6 flex flex-col gap-4 min-h-[420px]"
         >
-          <h2 className="font-display text-xl md:text-2xl font-bold">The Roast 🎤</h2>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="font-display text-xl md:text-2xl font-bold">The Roast 🎤</h2>
+            {result?.detectedLanguage && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-[#ff2d78] bg-[#ff2d78]/10 border border-[#ff2d78]/30 rounded-lg px-3 py-1.5"
+              >
+                <span>🔍</span>
+                {result.detectedLanguage}
+              </motion.span>
+            )}
+          </div>
 
           <AnimatePresence mode="wait">
             {loading && (
