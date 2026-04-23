@@ -153,10 +153,8 @@ Deno.serve(async (req: Request) => {
 
     const args = JSON.parse(toolCall.function.arguments);
 
-    // Persist code + roast to the database (best-effort, non-blocking)
+    // Persist code + roast to the database, owned by the authenticated user
     try {
-      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-      const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
       if (SUPABASE_URL && SERVICE_KEY) {
         await fetch(`${SUPABASE_URL}/rest/v1/roasts`, {
           method: "POST",
@@ -167,6 +165,7 @@ Deno.serve(async (req: Request) => {
             Prefer: "return=minimal",
           },
           body: JSON.stringify({
+            user_id: userId,
             language: args.detectedLanguage || "Unknown",
             code,
             opener: args.opener,
