@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { FlameRating } from "./FlameRating";
 
 const LANGUAGES = ["JavaScript", "TypeScript", "Python", "C++", "Java", "PHP", "Go", "Rust", "Other"];
-const MAX_CHARS = 2000;
+const MAX_CHARS = 10000;
 
 type RoastResult = {
   roast: string;
