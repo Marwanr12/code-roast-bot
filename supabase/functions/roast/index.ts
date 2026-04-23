@@ -69,8 +69,8 @@ Deno.serve(async (req: Request) => {
                   opener: { type: "string", description: "One brutal punchline opener, 1-2 sentences." },
                   issues: {
                     type: "array",
-                    minItems: 3,
-                    maxItems: 5,
+                    minItems: 1,
+                    description: "Cover ALL issues in the code. No fixed limit.",
                     items: {
                       type: "object",
                       properties: {
@@ -127,6 +127,34 @@ Deno.serve(async (req: Request) => {
     }
 
     const args = JSON.parse(toolCall.function.arguments);
+
+    // Persist code + roast to the database (best-effort, non-blocking)
+    try {
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+      const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (SUPABASE_URL && SERVICE_KEY) {
+        await fetch(`${SUPABASE_URL}/rest/v1/roasts`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SERVICE_KEY,
+            Authorization: `Bearer ${SERVICE_KEY}`,
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            language: language || "Unknown",
+            code,
+            opener: args.opener,
+            issues: args.issues,
+            verdict: args.verdict,
+            backhanded_compliment: args.backhandedCompliment,
+            flames: args.flames,
+          }),
+        });
+      }
+    } catch (storeErr) {
+      console.error("Failed to store roast:", storeErr);
+    }
 
     return new Response(JSON.stringify(args), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
