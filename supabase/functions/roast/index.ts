@@ -88,7 +88,7 @@ Deno.serve(async (req: Request) => {
                   backhandedCompliment: { type: "string", description: "A single backhanded compliment." },
                   flames: { type: "integer", minimum: 1, maximum: 5, description: "1=disaster, 5=surprisingly okay" },
                 },
-                required: ["opener", "issues", "verdict", "backhandedCompliment", "flames"],
+                required: ["detectedLanguage", "opener", "issues", "verdict", "backhandedCompliment", "flames"],
                 additionalProperties: false,
               },
             },
@@ -144,7 +144,7 @@ Deno.serve(async (req: Request) => {
             Prefer: "return=minimal",
           },
           body: JSON.stringify({
-            language: language || "Unknown",
+            language: args.detectedLanguage || "Unknown",
             code,
             opener: args.opener,
             issues: args.issues,
