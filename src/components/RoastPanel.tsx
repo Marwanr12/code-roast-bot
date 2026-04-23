@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
-import { useNavigate } from "@tanstack/react-router";
 import { FlameRating } from "./FlameRating";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 
 const MAX_CHARS = 10000;
 
@@ -20,10 +17,7 @@ type RoastResult = {
 };
 
 export function RoastPanel() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [code, setCode] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RoastResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,39 +36,21 @@ export function RoastPanel() {
 
   const handleRoast = async () => {
     if (!code.trim()) return;
-    if (!user) {
-      toast.error("Sign in first to get roasted.");
-      navigate({ to: "/auth" });
-      return;
-    }
     setLoading(true);
     setResult(null);
     setError(null);
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) {
-        setError("Your session expired. Sign in again.");
-        navigate({ to: "/auth" });
-        return;
-      }
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/roast`;
       const resp = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({ code: code.slice(0, MAX_CHARS) }),
       });
 
-      if (resp.status === 401) {
-        setError("Sign in to get roasted.");
-        navigate({ to: "/auth" });
-        return;
-      }
       if (resp.status === 429) {
         setError("Whoa, slow down. The roast oven is overheating. 🔥");
         return;
@@ -166,8 +142,6 @@ export function RoastPanel() {
               <span className="inline-flex items-center gap-2">
                 <span className="inline-block animate-spin-slow">🔥</span> Roasting...
               </span>
-            ) : !user ? (
-              <span>🔒 Sign in to Roast</span>
             ) : (
               <span>Roast It 🔥</span>
             )}
