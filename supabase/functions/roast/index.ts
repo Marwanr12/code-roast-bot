@@ -65,11 +65,27 @@ Deno.serve(async (req: Request) => {
               parameters: {
                 type: "object",
                 properties: {
-                  roast: { type: "string", description: "The funny roast, under 150 words." },
-                  flames: { type: "integer", minimum: 1, maximum: 5, description: "1=disaster, 5=surprisingly okay" },
+                  opener: { type: "string", description: "One brutal punchline opener, 1-2 sentences." },
+                  issues: {
+                    type: "array",
+                    minItems: 3,
+                    maxItems: 5,
+                    items: {
+                      type: "object",
+                      properties: {
+                        title: { type: "string", description: "Short punchy label, max 6 words." },
+                        burn: { type: "string", description: "1-2 sentence funny roast for this issue." },
+                        emoji: { type: "string", description: "ONE emoji matching the burn." },
+                      },
+                      required: ["title", "burn", "emoji"],
+                      additionalProperties: false,
+                    },
+                  },
+                  verdict: { type: "string", description: "One closing summary line." },
                   backhandedCompliment: { type: "string", description: "A single backhanded compliment." },
+                  flames: { type: "integer", minimum: 1, maximum: 5, description: "1=disaster, 5=surprisingly okay" },
                 },
-                required: ["roast", "flames", "backhandedCompliment"],
+                required: ["opener", "issues", "verdict", "backhandedCompliment", "flames"],
                 additionalProperties: false,
               },
             },
