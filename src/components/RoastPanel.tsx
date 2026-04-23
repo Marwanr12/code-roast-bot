@@ -111,17 +111,10 @@ export function RoastPanel() {
         >
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h2 className="font-display text-xl md:text-2xl font-bold">Your Code 🫣</h2>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="bg-input text-foreground rounded-lg px-3 py-2 text-sm border border-border focus:outline-none focus:ring-2 focus:ring-[#ff2d78] font-mono"
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
+            <span className="inline-flex items-center gap-1.5 text-xs font-mono text-muted-foreground bg-black/40 border border-border rounded-lg px-3 py-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#7b2fff] animate-pulse" />
+              Auto-detect language
+            </span>
           </div>
 
           <textarea
