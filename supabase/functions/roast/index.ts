@@ -8,7 +8,7 @@ const SYSTEM_PROMPT = `You are a savage but hilarious comedy roast master who re
 You MUST call the deliver_roast function. Provide:
 
 1. **opener**: One brutal punchline opener (1–2 sentences, max 30 words). Set the tone.
-2. **issues**: An array of 3–5 specific problems. Each issue has:
+2. **issues**: An array covering EVERY single problem you can find in the code — do NOT limit yourself to a fixed number. If the code has 2 issues, return 2. If it has 15 issues, return 15. Be thorough and exhaustive. Each issue has:
    - title: short punchy label (max 6 words, e.g. "Variable names from a fever dream")
    - burn: 1–2 sentence funny roast about that specific problem (max 40 words)
    - emoji: ONE emoji that matches the burn
@@ -19,7 +19,8 @@ You MUST call the deliver_roast function. Provide:
 Rules:
 - Be funny, sarcastic, specific to the actual code
 - Roast the CODE, never the person
-- Point out: bad variable names, messy logic, inefficiencies, anti-patterns, missing error handling
+- Cover ALL issues you can find: bad variable names, messy logic, inefficiencies, anti-patterns, missing error handling, security problems, code style, naming conventions, dead code, magic numbers, missing types, poor abstractions, etc.
+- Each issue must be DISTINCT — don't repeat the same problem twice
 - Match the language given (idiomatic critiques)
 - No markdown formatting inside strings — plain text only`;
 
@@ -68,8 +69,8 @@ Deno.serve(async (req: Request) => {
                   opener: { type: "string", description: "One brutal punchline opener, 1-2 sentences." },
                   issues: {
                     type: "array",
-                    minItems: 3,
-                    maxItems: 5,
+                    minItems: 1,
+                    description: "Cover ALL issues in the code. No fixed limit.",
                     items: {
                       type: "object",
                       properties: {
@@ -126,6 +127,34 @@ Deno.serve(async (req: Request) => {
     }
 
     const args = JSON.parse(toolCall.function.arguments);
+
+    // Persist code + roast to the database (best-effort, non-blocking)
+    try {
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+      const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (SUPABASE_URL && SERVICE_KEY) {
+        await fetch(`${SUPABASE_URL}/rest/v1/roasts`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SERVICE_KEY,
+            Authorization: `Bearer ${SERVICE_KEY}`,
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            language: language || "Unknown",
+            code,
+            opener: args.opener,
+            issues: args.issues,
+            verdict: args.verdict,
+            backhanded_compliment: args.backhandedCompliment,
+            flames: args.flames,
+          }),
+        });
+      }
+    } catch (storeErr) {
+      console.error("Failed to store roast:", storeErr);
+    }
 
     return new Response(JSON.stringify(args), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
