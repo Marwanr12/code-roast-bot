@@ -1,26 +1,36 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Toaster } from "@/components/ui/sonner";
+import { Hero } from "@/components/Hero";
+import { RoastPanel } from "@/components/RoastPanel";
+import { ExamplesSection } from "@/components/ExamplesSection";
 
 export const Route = createFileRoute("/")({
   component: Index,
+  head: () => ({
+    meta: [
+      { title: "Roast My Code 🔥 — AI roasts your terrible code" },
+      {
+        name: "description",
+        content:
+          "Paste your code. Prepare to be destroyed. An AI comedy roast master reviews your code with brutal, hilarious honesty.",
+      },
+      { property: "og:title", content: "Roast My Code 🔥" },
+      { property: "og:description", content: "Paste your code. Prepare to be destroyed." },
+    ],
+  }),
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background grid-bg">
+      <Hero />
+      <RoastPanel />
+      <ExamplesSection />
+      <footer className="border-t border-border py-10 text-center text-sm text-muted-foreground font-mono">
+        <p>Made with 💀 and AI</p>
+        <p className="mt-1 text-xs opacity-70">No actual roasters were harmed in the making of this app.</p>
+      </footer>
+      <Toaster theme="dark" position="top-center" />
     </div>
   );
-}
-
-function Index() {
-  return <PlaceholderIndex />;
 }
