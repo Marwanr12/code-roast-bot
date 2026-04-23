@@ -3,7 +3,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { Hero } from "@/components/Hero";
 import { RoastPanel } from "@/components/RoastPanel";
 import { ExamplesSection } from "@/components/ExamplesSection";
-import { Header } from "@/components/Header";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -24,7 +23,6 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <Header />
       <Hero />
       <RoastPanel />
       <ExamplesSection />
