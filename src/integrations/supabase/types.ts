@@ -24,6 +24,7 @@ export type Database = {
           issues: Json
           language: string
           opener: string
+          user_id: string
           verdict: string
         }
         Insert: {
@@ -35,6 +36,7 @@ export type Database = {
           issues?: Json
           language: string
           opener: string
+          user_id: string
           verdict: string
         }
         Update: {
@@ -46,6 +48,7 @@ export type Database = {
           issues?: Json
           language?: string
           opener?: string
+          user_id?: string
           verdict?: string
         }
         Relationships: []
