@@ -7,28 +7,29 @@ const SYSTEM_PROMPT = `You are a savage but hilarious comedy roast master who re
 
 You MUST call the deliver_roast function. Provide:
 
-1. **opener**: One brutal punchline opener (1–2 sentences, max 30 words). Set the tone.
-2. **issues**: An array covering EVERY single problem you can find in the code — do NOT limit yourself to a fixed number. If the code has 2 issues, return 2. If it has 15 issues, return 15. Be thorough and exhaustive. Each issue has:
+1. **detectedLanguage**: Auto-detect the programming language from the code itself (e.g. "JavaScript", "TypeScript", "Python", "C++", "Java", "PHP", "Go", "Rust", "Ruby", "Swift", "Kotlin", "C#", "HTML", "CSS", "SQL", "Bash", "Unknown"). Use ONLY the code — ignore any hints.
+2. **opener**: One brutal punchline opener (1–2 sentences, max 30 words). Set the tone.
+3. **issues**: An array covering EVERY single problem you can find in the code — do NOT limit yourself to a fixed number. If the code has 2 issues, return 2. If it has 15 issues, return 15. Be thorough and exhaustive. Each issue has:
    - title: short punchy label (max 6 words, e.g. "Variable names from a fever dream")
    - burn: 1–2 sentence funny roast about that specific problem (max 40 words)
    - emoji: ONE emoji that matches the burn
-3. **verdict**: One closing summary line (max 25 words).
-4. **backhandedCompliment**: A single backhanded compliment (max 25 words).
-5. **flames**: integer 1–5 (1 = disaster, 5 = surprisingly okay).
+4. **verdict**: One closing summary line (max 25 words).
+5. **backhandedCompliment**: A single backhanded compliment (max 25 words).
+6. **flames**: integer 1–5 (1 = disaster, 5 = surprisingly okay).
 
 Rules:
 - Be funny, sarcastic, specific to the actual code
 - Roast the CODE, never the person
 - Cover ALL issues you can find: bad variable names, messy logic, inefficiencies, anti-patterns, missing error handling, security problems, code style, naming conventions, dead code, magic numbers, missing types, poor abstractions, etc.
 - Each issue must be DISTINCT — don't repeat the same problem twice
-- Match the language given (idiomatic critiques)
+- Make critiques idiomatic to the detected language
 - No markdown formatting inside strings — plain text only`;
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { code, language } = await req.json();
+    const { code } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY missing from environment");
@@ -55,7 +56,7 @@ Deno.serve(async (req: Request) => {
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `Language: ${language || "Unknown"}\n\nCode:\n\`\`\`\n${code}\n\`\`\`` },
+          { role: "user", content: `Detect the programming language and roast this code:\n\n\`\`\`\n${code}\n\`\`\`` },
         ],
         tools: [
           {
@@ -66,6 +67,7 @@ Deno.serve(async (req: Request) => {
               parameters: {
                 type: "object",
                 properties: {
+                  detectedLanguage: { type: "string", description: "The programming language auto-detected from the code." },
                   opener: { type: "string", description: "One brutal punchline opener, 1-2 sentences." },
                   issues: {
                     type: "array",
@@ -86,7 +88,7 @@ Deno.serve(async (req: Request) => {
                   backhandedCompliment: { type: "string", description: "A single backhanded compliment." },
                   flames: { type: "integer", minimum: 1, maximum: 5, description: "1=disaster, 5=surprisingly okay" },
                 },
-                required: ["opener", "issues", "verdict", "backhandedCompliment", "flames"],
+                required: ["detectedLanguage", "opener", "issues", "verdict", "backhandedCompliment", "flames"],
                 additionalProperties: false,
               },
             },
@@ -142,7 +144,7 @@ Deno.serve(async (req: Request) => {
             Prefer: "return=minimal",
           },
           body: JSON.stringify({
-            language: language || "Unknown",
+            language: args.detectedLanguage || "Unknown",
             code,
             opener: args.opener,
             issues: args.issues,

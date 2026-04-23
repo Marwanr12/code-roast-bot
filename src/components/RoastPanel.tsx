@@ -4,11 +4,11 @@ import confetti from "canvas-confetti";
 import { toast } from "sonner";
 import { FlameRating } from "./FlameRating";
 
-const LANGUAGES = ["JavaScript", "TypeScript", "Python", "C++", "Java", "PHP", "Go", "Rust", "Other"];
 const MAX_CHARS = 10000;
 
 type RoastIssue = { title: string; burn: string; emoji: string };
 type RoastResult = {
+  detectedLanguage: string;
   opener: string;
   issues: RoastIssue[];
   verdict: string;
@@ -18,7 +18,7 @@ type RoastResult = {
 
 export function RoastPanel() {
   const [code, setCode] = useState("");
-  const [language, setLanguage] = useState("JavaScript");
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RoastResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +49,7 @@ export function RoastPanel() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ code: code.slice(0, MAX_CHARS), language }),
+        body: JSON.stringify({ code: code.slice(0, MAX_CHARS) }),
       });
 
       if (resp.status === 429) {
@@ -111,17 +111,10 @@ export function RoastPanel() {
         >
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h2 className="font-display text-xl md:text-2xl font-bold">Your Code 🫣</h2>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="bg-input text-foreground rounded-lg px-3 py-2 text-sm border border-border focus:outline-none focus:ring-2 focus:ring-[#ff2d78] font-mono"
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
+            <span className="inline-flex items-center gap-1.5 text-xs font-mono text-muted-foreground bg-black/40 border border-border rounded-lg px-3 py-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#7b2fff] animate-pulse" />
+              Auto-detect language
+            </span>
           </div>
 
           <textarea
@@ -163,7 +156,19 @@ export function RoastPanel() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="rounded-2xl border border-border bg-card p-5 md:p-6 flex flex-col gap-4 min-h-[420px]"
         >
-          <h2 className="font-display text-xl md:text-2xl font-bold">The Roast 🎤</h2>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="font-display text-xl md:text-2xl font-bold">The Roast 🎤</h2>
+            {result?.detectedLanguage && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-[#ff2d78] bg-[#ff2d78]/10 border border-[#ff2d78]/30 rounded-lg px-3 py-1.5"
+              >
+                <span>🔍</span>
+                {result.detectedLanguage}
+              </motion.span>
+            )}
+          </div>
 
           <AnimatePresence mode="wait">
             {loading && (
