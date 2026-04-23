@@ -77,14 +77,17 @@ export function RoastPanel() {
 
   const handleCopy = async () => {
     if (!result) return;
-    const text = `${result.roast}\n\n${"🔥".repeat(result.flames)} (${result.flames}/5)\n\n"${result.backhandedCompliment}"\n\n— Roasted by RoastMyCode`;
+    const issuesText = result.issues
+      .map((it, i) => `${i + 1}. ${it.emoji} ${it.title}\n   ${it.burn}`)
+      .join("\n\n");
+    const text = `🎤 ${result.opener}\n\n${issuesText}\n\n${"🔥".repeat(result.flames)} (${result.flames}/5)\n\n📌 ${result.verdict}\n\n💬 "${result.backhandedCompliment}"\n\n— Roasted by RoastMyCode`;
     await navigator.clipboard.writeText(text);
     toast.success("Roast copied. Now go cry in monospace.");
   };
 
   const handleTweet = () => {
     if (!result) return;
-    const text = `My code just got roasted: "${result.roast.slice(0, 180)}..." ${"🔥".repeat(result.flames)}\n\nGet roasted too:`;
+    const text = `My code just got roasted: "${result.opener.slice(0, 180)}" ${"🔥".repeat(result.flames)}\n\nGet roasted too:`;
     const url = window.location.href;
     window.open(
       `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
